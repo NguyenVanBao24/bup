@@ -1,5 +1,4 @@
 'use client';
-
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -9,18 +8,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const dataField = ['Tên', 'id'];
+
+// Định nghĩa kiểu dữ liệu trả về từ API
+type ApiResponse = {
+  status: number;
+  data: string[];
+};
 
 const FormSchema = z.object({
   username: z.string().min(2, {
@@ -32,7 +28,7 @@ const FormSchema = z.object({
 });
 
 export default function Home() {
-  const [data, setData] = useState([]); // State lưu dữ liệu API
+  const [data, setData] = useState<ApiResponse | null>(null); // State lưu dữ liệu API với kiểu rõ ràng
   const [isDialogOpen, setIsDialogOpen] = useState(false); // State kiểm soát AlertDialog
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -82,7 +78,6 @@ export default function Home() {
     setIsDialogOpen(false);
     form.reset();
   };
-  console.log(data, 'lllllllll');
 
   return (
     <div className='container mx-auto p-6 max-w-md'>
@@ -134,14 +129,14 @@ export default function Home() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle></AlertDialogTitle>
-            {data.status == 200 ? (
-              data?.data?.map((item: string, index: number) => <AlertDialogDescription key={index}>{`${dataField[index]}: ${item}`} </AlertDialogDescription>)
+            {data && data.status === 200 ? (
+              data.data.map((item: string, index: number) => <AlertDialogDescription key={index}>{`${dataField[index]}: ${item}`}</AlertDialogDescription>)
             ) : (
               <AlertDialogDescription>Không tồn tại nhân viên</AlertDialogDescription>
             )}
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => handleReset}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleReset}>Cancel</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
