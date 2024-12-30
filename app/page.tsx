@@ -50,7 +50,7 @@ export default function Home() {
     console.log('Form Data:', data);
 
     try {
-      const response = await fetch(`http://localhost:3001/api/find-value?name=${data.username}`, {
+      const response = await fetch(`https://bup-be.vercel.app/api/find-value?name=${data.username}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
