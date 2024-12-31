@@ -10,65 +10,64 @@ import { toast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-const dataField = ['Tên', 'id'];
+const monthField = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec', 'restUse', 'restNotUse'];
 
-// Định nghĩa kiểu dữ liệu trả về từ API
+type DataResponse = {
+  EmployeeId?: string;
+  EmployeeName?: string;
+  position?: string;
+  [key: string]: string | undefined; // Cho phép động các trường tháng
+};
+
 type ApiResponse = {
   status: number;
-  data: string[];
+  data: DataResponse;
 };
 
 const FormSchema = z.object({
-  username: z.string().min(2, {
-    message: 'Username must be at least 2 characters.',
-  }),
-  employeeId: z.string().min(2, {
-    message: 'Employee ID must be at least 2 characters.',
+  username: z.string().min(1, {
+    message: 'Username must be at least 1 character.',
   }),
 });
 
 export default function Home() {
-  const [data, setData] = useState<ApiResponse | null>(null); // State lưu dữ liệu API với kiểu rõ ràng
-  const [isDialogOpen, setIsDialogOpen] = useState(false); // State kiểm soát AlertDialog
+  const [data, setData] = useState<ApiResponse | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       username: '',
-      employeeId: '',
     },
   });
 
-  // Mở AlertDialog khi data thay đổi
   useEffect(() => {
-    if (data) {
-      setIsDialogOpen(true);
-    }
+    if (data) setIsDialogOpen(true);
   }, [data]);
 
-  async function onSubmit(data: z.infer<typeof FormSchema>) {
-    console.log('Form Data:', data);
-
+  async function onSubmit(formData: z.infer<typeof FormSchema>) {
     try {
-      const response = await fetch(`https://bup-be.vercel.app/api/find-value?name=${data.username}`, {
-        method: 'GET',
+      const response = await fetch('http://localhost:3001/api/find-value', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ name: formData.username }),
       });
 
       const result = await response.json();
       console.log('API Response:', result);
-      setData(result); // Lưu kết quả API vào state
+
+      setData(result);
     } catch (error) {
-      console.log(error);
+      console.error('Fetch Error:', error);
     }
 
     toast({
       title: 'You submitted the following values:',
       description: (
-        <pre className='mt-2 w-[340px] rounded-md bg-slate-950 p-4'>
-          <code className='text-white'>{JSON.stringify(data, null, 2)}</code>
+        <pre className='mt-2 w-[1000px] rounded-md bg-slate-950 p-4'>
+          <code className='text-white'>{JSON.stringify(formData, null, 2)}</code>
         </pre>
       ),
     });
@@ -84,33 +83,17 @@ export default function Home() {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className='w-2/3 space-y-6'
+          className='w-full space-y-6'
         >
           <FormField
             control={form.control}
             name='username'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Họ tên</FormLabel>
+                <FormLabel>Căn cước công dân</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder='Nhập đầy đủ họ tên'
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name='employeeId'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Mã nhân viên</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder='Nhập mã nhân viên'
+                    placeholder='Nhập số căn cước công dân'
                     {...field}
                   />
                 </FormControl>
@@ -121,18 +104,42 @@ export default function Home() {
           <Button type='submit'>Submit</Button>
         </form>
       </Form>
-
       <AlertDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className='max-w-md overflow-x-auto'>
           <AlertDialogHeader>
-            <AlertDialogTitle></AlertDialogTitle>
-            {data && data.status === 200 ? (
-              data.data.map((item: string, index: number) => <AlertDialogDescription key={index}>{`${dataField[index]}: ${item}`}</AlertDialogDescription>)
+            <AlertDialogTitle>Thông tin nhân viên</AlertDialogTitle>
+            {data && data?.status === 200 ? (
+              <div>
+                <AlertDialogDescription>
+                  <strong>Mã Nhân viên:</strong> {data.data.EmployeeId}
+                </AlertDialogDescription>
+                <AlertDialogDescription>
+                  <strong>Tên Nhân viên:</strong> {data.data.EmployeeName}
+                </AlertDialogDescription>
+                <AlertDialogDescription>
+                  <strong>Chức vụ:</strong> {data.data.position}
+                </AlertDialogDescription>
+                <div className='overflow-x-auto mt-4'>
+                  <table className='w-full border-collapse border border-gray-300'>
+                    <tbody>
+                      {monthField?.map((field, index) => (
+                        <tr
+                          key={index}
+                          className='even:bg-gray-50'
+                        >
+                          <td className='border border-gray-300 p-2 font-medium bg-gray-100'>{field}</td>
+                          <td className='border border-gray-300 p-2'>{data.data[field] || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             ) : (
-              <AlertDialogDescription>Không tồn tại nhân viên</AlertDialogDescription>
+              <AlertDialogDescription>{data?.status == 429 ? 'Quá nhiều yêu cầu từ IP này, vui lòng thử lại sau 15 phút' : 'Không tồn tại nhân viên'}</AlertDialogDescription>
             )}
           </AlertDialogHeader>
           <AlertDialogFooter>
