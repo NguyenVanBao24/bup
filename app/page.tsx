@@ -47,7 +47,7 @@ export default function Home() {
 
   async function onSubmit(formData: z.infer<typeof FormSchema>) {
     try {
-      const response = await fetch('http://localhost:3001/api/find-value', {
+      const response = await fetch('https://bup-be.vercel.app/api/find-value', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
