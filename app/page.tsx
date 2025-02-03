@@ -48,6 +48,7 @@ export default function Home() {
   async function onSubmit(formData: z.infer<typeof FormSchema>) {
     try {
       const response = await fetch('https://bup-be.vercel.app/api/find-value', {
+        // const response = await fetch('http://localhost:3001/api/find-value', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,10 +91,10 @@ export default function Home() {
             name='username'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Căn cước công dân</FormLabel>
+                <FormLabel>Tên</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder='Nhập số căn cước công dân'
+                    placeholder='Nhập Tên'
                     {...field}
                   />
                 </FormControl>
